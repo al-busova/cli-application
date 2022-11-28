@@ -1,31 +1,50 @@
-const fs = require("fs");
+const fs = require("fs").promises;
+const { v4 } = require("uuid");
 const path = require("path");
 
-const contactsPath = path.resolve("./db/contacts.json");
+const contactsPath = path.resolve("db/contacts.json");
 
-function listContacts() {
-  fs.readFile(contactsPath, "utf-8", (err, data) => {
-    console.log(JSON.parse(data));
-  });
-}
+const updateContact = async (contacts) => {
+  await fs.writeFile(contactsPath, JSON.stringify(contacts));
+};
 
-function getContactById(contactId) {
-  fs.readFile(contactsPath, "utf-8", (err, data) => {
-    const contacts = JSON.parse(data);
-    const searchContact = [...contacts].find(
-      (contact) => Number(contact.id) === contactId
-    );
-    console.log(searchContact);
-  });
-}
+const listContacts = async () => {
+  const data = await fs.readFile(contactsPath);
+  const contacts = JSON.parse(data);
+  return contacts;
+};
 
-function removeContact(contactId) {
-  // ...твій код
-}
+const getContactById = async (contactId) => {
+  const contacts = await listContacts();
+  const searchContact = contacts.find(
+    (contact) => Number(contact.id) === contactId
+  );
+  if (!searchContact) {
+    return null;
+  }
+  return searchContact;
+};
 
-function addContact(name, email, phone) {
-  // ...твій код
-}
+const removeContact = async (contactId) => {
+  const contacts = await listContacts();
+  const contactIndex = contacts.findIndex(
+    (contact) => Number(contact.id) === contactId
+  );
+  if (contactIndex === -1) {
+    return null;
+  }
+  const [removeContact] = contacts.splice(contactIndex, 1);
+  await updateContact(contacts);
+  return removeContact;
+};
+
+const addContact = async (name, email, phone) => {
+  const contacts = await listContacts();
+  const newContact = { id: v4(), name, email, phone };
+  contacts.push(newContact);
+  await updateContact(contacts);
+  return newContact;
+};
 
 module.exports = {
   listContacts,
